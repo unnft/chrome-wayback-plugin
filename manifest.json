@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Wayback Rescue",
+  "version": "1.0",
+  "description": "Automatically redirects 404 pages to the Wayback Machine archive",
+  "permissions": [
+    "webRequest",
+    "webNavigation",
+    "activeTab",
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["wayback-search.html", "wayback-search.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wayback Rescue - Searching Archives</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      margin-bottom: 20px;
+    }
+    .logo {
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #1E4273;
+    }
+    p {
+      font-size: 16px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .url {
+      font-weight: bold;
+      word-break: break-all;
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #1E4273;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      margin: 20px auto;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .button {
+      background-color: #1E4273;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background-color 0.2s;
+    }
+    .button:hover {
+      background-color: #153055;
+    }
+    .hidden {
+      display: none;
+    }
+    .status-message {
+      margin-top: 20px;
+      font-style: italic;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="logo">
+        <svg width="180" height="35" viewBox="0 0 180 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="35" height="35" rx="4" fill="#1E4273"/>
+          <path d="M8 8H28V28H8V8Z" stroke="white" stroke-width="2"/>
+          <path d="M7.5 17.5H28.5" stroke="white" stroke-width="1.5"/>
+          <text x="17.5" y="25" font-family="Arial" font-size="20" fill="white" text-anchor="middle">W</text>
+          <text x="48" y="24" font-family="Arial" font-size="16" font-weight="bold" fill="#1E4273">Wayback Rescue</text>
+        </svg>
+      </div>
+      
+      <!-- Search view -->
+      <div id="search-view">
+        <h1>Looking for archived versions...</h1>
+        <p id="search-message">Searching for archived version of:</p>
+        <div class="url" id="original-url">https://example.com</div>
+        <div class="spinner"></div>
+        <p class="status-message" id="variant-message"></p>
+      </div>
+      
+      <!-- Found view -->
+      <div id="found-view" class="hidden">
+        <h1>Archive Found!</h1>
+        <p>Found an archived version of:</p>
+        <div class="url" id="found-url">https://example.com</div>
+        <p>Redirecting in a moment...</p>
+        <div class="spinner"></div>
+      </div>
+      
+      <!-- Not found view -->
+      <div id="not-found-view" class="hidden">
+        <h1>No Archive Available</h1>
+        <p>No archived version was found for:</p>
+        <div class="url" id="not-found-url">https://example.com</div>
+        <p>The Wayback Machine has not saved any version of this page.</p>
+        <p><small>All URL variants (www/non-www, http/https) were checked.</small></p>
+        <button class="button" id="close-button">Close</button>
+      </div>
+      
+      <!-- Error view -->
+      <div id="error-view" class="hidden">
+        <h1>Error Searching Archives</h1>
+        <p>An error occurred while searching for archived versions of:</p>
+        <div class="url" id="error-url">https://example.com</div>
+        <p class="status-message" id="error-message"></p>
+        <button class="button" id="error-close-button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="wayback-search.js"></script>
+</body>
+</html>
