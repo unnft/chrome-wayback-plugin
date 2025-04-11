@@ -148,19 +148,55 @@ async function checkWaybackAndRedirect(url, tabId) {
     // Wait a moment for the search page to load
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Try original URL first
-    let archivedUrl = await findArchivedVersion(url);
-    let foundVariant = url;
+    // Update the search page to show we're searching
+    const searchStatusUrl = chrome.runtime.getURL('wayback-search.html') + 
+                      `?state=searching&url=${encodeURIComponent(url)}`;
     
-    if (archivedUrl) {
-      // Found archive with original URL
-      console.log(`Found archive for original URL: ${url}`);
+    await chrome.tabs.update(tabId, { url: searchStatusUrl });
+    
+    // Generate all URL variants to try (including the original URL)
+    const variants = [url, ...generateUrlVariants(url)];
+    
+    // Update the search page to show we're checking multiple variants
+    const checkingVariantsUrl = chrome.runtime.getURL('wayback-search.html') + 
+                        `?state=variants&url=${encodeURIComponent(url)}` +
+                        `&count=${variants.length}`;
+    
+    await chrome.tabs.update(tabId, { url: checkingVariantsUrl });
+    
+    // Create an array of promises to check all variants in parallel
+    console.log(`Checking ${variants.length} URL variants in parallel`);
+    
+    // Map each variant to a promise that resolves with the variant and its archived URL (if found)
+    const variantChecks = variants.map(async (variant) => {
+      try {
+        const archived = await findArchivedVersion(variant);
+        return { 
+          variant, 
+          archived,
+          found: !!archived 
+        };
+      } catch (error) {
+        console.error(`Error checking variant ${variant}:`, error);
+        return { variant, archived: null, found: false };
+      }
+    });
+    
+    // Wait for all variant checks to complete
+    const results = await Promise.all(variantChecks);
+    
+    // Find the first successful result (if any)
+    const successResult = results.find(result => result.found);
+    
+    if (successResult) {
+      // Found an archive
+      console.log(`Found archive for variant: ${successResult.variant}`);
       
       // Update the search page with found state
       const foundUrl = chrome.runtime.getURL('wayback-search.html') + 
-                       `?state=found&url=${encodeURIComponent(url)}` +
-                       `&variant=${encodeURIComponent(foundVariant)}` +
-                       `&archive=${encodeURIComponent(archivedUrl)}`;
+                      `?state=found&url=${encodeURIComponent(url)}` +
+                      `&variant=${encodeURIComponent(successResult.variant)}` +
+                      `&archive=${encodeURIComponent(successResult.archived)}`;
       
       await chrome.tabs.update(tabId, { url: foundUrl });
       
@@ -168,56 +204,11 @@ async function checkWaybackAndRedirect(url, tabId) {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Redirect to the archived version
-      chrome.tabs.update(tabId, { url: archivedUrl });
-      console.log(`Redirected to archived version: ${archivedUrl}`);
+      chrome.tabs.update(tabId, { url: successResult.archived });
+      console.log(`Redirected to archived version: ${successResult.archived}`);
     } else {
-      // If not found, try URL variants
-      console.log(`No archive found for original URL, trying variants of: ${url}`);
-      
-      // Generate URL variants to try
-      const variants = generateUrlVariants(url);
-      
-      // Try each variant until we find an archived version
-      for (const variant of variants) {
-        console.log(`Trying URL variant: ${variant}`);
-        
-        // Update the search page with variant info
-        try {
-          const variantUrl = chrome.runtime.getURL('wayback-search.html') + 
-                           `?state=variant&url=${encodeURIComponent(url)}` +
-                           `&variant=${encodeURIComponent(variant)}`;
-          
-          await chrome.tabs.update(tabId, { url: variantUrl });
-          
-          // Give the page a moment to update
-          await new Promise(resolve => setTimeout(resolve, 300));
-        } catch (err) {
-          console.log('Could not update search page:', err);
-        }
-        
-        archivedUrl = await findArchivedVersion(variant);
-        if (archivedUrl) {
-          console.log(`Found archive using variant: ${variant}`);
-          foundVariant = variant;
-          
-          // Update the search page with found state
-          const foundUrl = chrome.runtime.getURL('wayback-search.html') + 
-                          `?state=found&url=${encodeURIComponent(url)}` +
-                          `&variant=${encodeURIComponent(foundVariant)}` +
-                          `&archive=${encodeURIComponent(archivedUrl)}`;
-          
-          await chrome.tabs.update(tabId, { url: foundUrl });
-          
-          // Short delay before final redirect
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          // Redirect to the archived version
-          chrome.tabs.update(tabId, { url: archivedUrl });
-          console.log(`Redirected to archived version: ${archivedUrl}`);
-          
-          return;
-        }
-      }
+      // No archives found for any variant
+      console.log(`No archived version found for any of the ${variants.length} variants tried`);
       
       // If we get here, no archive was found for any variant
       console.log(`No archived version found for any variant of: ${url}`);
